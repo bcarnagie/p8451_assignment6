@@ -15,28 +15,16 @@ library(e1071)
 
 ```
 
+This analysis follows the methodology presented by Yu et al., which utilizes NHANES data from 1999-2004 to predict diabetes and pre-diabetes using Support Vector Machines (SVM). Our goal is to predict Diabetes using a similar set of variables but acknowledging that the available data and outcomes may differ, leading to unique insights.
 
-The posted article by Yu et al utilized NHANES data from 1999-2004 to predict diabetes and pre-diabetes using Support Vector Machines. You will conduct a similar analysis using data within the NHANES package in R. For this exercise, you will try to predict Diabetes using similar (although not all) variables. The available data is also  different, so you won't get the same answers.
+### Question 1 & 2: Data Loading and Preprocessing
 
-REMINDER: Look at the frequency of your outcome variable to check for balance
-
-For this assignment, you will:
-
-## Load the NHANES data using the NHANES R package
 ```{r}
 set.seed(123)
 library(NHANES)
 
 nhanes = NHANES %>% janitor::clean_names()
-```
 
-
-## Restrict the NHANES data to the list of 11 variables below. Perform light data cleaning. Determine if you want to exclude any of the features before you start. Partition the data into training and testing using a 70/30 split.
-
-"Age", "Race1", "Education", "HHIncome", "Weight", "Height", "Pulse", "Diabetes", "BMI", "PhysActive", "Smoke100"
-
-```{r}
-set.seed(123)
 nhanes = nhanes |> select(age, race1, education, hh_income, weight, height, pulse, diabetes, bmi, phys_active, smoke100) |>  na.omit()
 
 partition <- createDataPartition(y = nhanes$diabetes, p = 0.7, list = FALSE)
@@ -47,7 +35,7 @@ test_data <- nhanes[-partition, ]
 ```
 
 
-## Construct three prediction models to predict diabetes using the features from NHANES. You will optimize each model using cross-validation to choose hyperparameters in the training data and then compare performance across models. You will use the following three algorithms to create your prediction models:
+## Question 3: Model Training and Evaluation
 
 ### Classification Tree
 ```{r}
@@ -136,7 +124,7 @@ coef(logistic.diabetes$finalModel)
 ```
 AUC for the logistic regression model is 0.8117.
 
-## Optimal Model Selection
+## Question 4: Optimal Model Selection
 
 The optimal model that I have chosen is the *logistic regression* due to its higher AUC value, indicating it has the best overall ability to distinguish between the classes across all thresholds. It also has slightly higher sensitivity, meaning it's marginally better at identifying true positives and slightly higher specificity, indicating a marginally better performance at identifying true negatives.
 
@@ -163,4 +151,6 @@ plot(roc.analysis.2, print.auc = TRUE, main = "ROC Curve for Diabetes Prediction
 * The high NPV and sensitivity suggest the model is quite conservative, effectively identifying negative cases but at the cost of missing or incorrectly predicting a significant portion of positive cases.
 
 
-## Ethical Considerations of Using Race in Predictive Modeling
+## Question 5: Ethical Considerations of Using Race in Predictive Modeling
+
+
