@@ -1,0 +1,166 @@
+---
+title: "Assignment 6: Comparison between Classification Trees, SVM and Logistic Regression"
+date: "2024-02-26"
+output: word_document
+---
+
+```{r load_packages, message=FALSE}
+library(tidyverse)
+library(rpart)
+library(caret)
+library(rpart.plot)
+library(pROC)
+library(kernlab)
+library(e1071)
+
+```
+
+
+The posted article by Yu et al utilized NHANES data from 1999-2004 to predict diabetes and pre-diabetes using Support Vector Machines. You will conduct a similar analysis using data within the NHANES package in R. For this exercise, you will try to predict Diabetes using similar (although not all) variables. The available data is also  different, so you won't get the same answers.
+
+REMINDER: Look at the frequency of your outcome variable to check for balance
+
+For this assignment, you will:
+
+## Load the NHANES data using the NHANES R package
+```{r}
+set.seed(123)
+library(NHANES)
+
+nhanes = NHANES %>% janitor::clean_names()
+```
+
+
+## Restrict the NHANES data to the list of 11 variables below. Perform light data cleaning. Determine if you want to exclude any of the features before you start. Partition the data into training and testing using a 70/30 split.
+
+"Age", "Race1", "Education", "HHIncome", "Weight", "Height", "Pulse", "Diabetes", "BMI", "PhysActive", "Smoke100"
+
+```{r}
+set.seed(123)
+nhanes = nhanes |> select(age, race1, education, hh_income, weight, height, pulse, diabetes, bmi, phys_active, smoke100) |>  na.omit()
+
+partition <- createDataPartition(y = nhanes$diabetes, p = 0.7, list = FALSE)
+
+# Creating training and testing sets
+train_data <- nhanes[partition, ]
+test_data <- nhanes[-partition, ]
+```
+
+
+## Construct three prediction models to predict diabetes using the features from NHANES. You will optimize each model using cross-validation to choose hyperparameters in the training data and then compare performance across models. You will use the following three algorithms to create your prediction models:
+
+### Classification Tree
+```{r}
+set.seed(123)
+# Set up 10-fold cross-validation with down-sampling for imbalance 
+train.control <- trainControl(method = "cv", number = 10, sampling = "down", summaryFunction = twoClassSummary, classProbs = TRUE, savePredictions = TRUE)
+
+# Create a sequence of cp values to try
+cpGrid <- expand.grid(cp = seq(0.001, 0.3, by = 0.01))
+
+# Train the model
+tree.diabetes <- train(
+  diabetes ~ .,
+  data = train_data,
+  method = "rpart",
+  trControl = train.control,
+  tuneGrid = cpGrid,
+  metric = "ROC"
+)
+
+# Best tuning parameter
+tree.diabetes$bestTune
+
+# Plotting the tree
+rpart.plot(tree.diabetes$finalModel)
+
+# Variable importance
+varImp(tree.diabetes)
+
+# Printing Model 
+print(tree.diabetes)
+```
+AUC for the Classification Tree model is 0.7891.
+
+### Support Vector Classifier (i.e. Support Vector Machine with a linear classifier)
+```{r, message=FALSE}
+set.seed(123)
+
+# Setting up cross-validation and specifying AUC as the metric
+trainControl <- trainControl(method = "cv",
+                             number = 10,
+                             summaryFunction = twoClassSummary,
+                             classProbs = TRUE, 
+                             savePredictions = "final")
+
+# Define a tuning grid for SVM hyperparameters, focusing on 'C'
+tuningGrid <- expand.grid(C = seq(0.001, 2, length = 20))
+
+# Train the SVM model with cross-validation
+svmModel <- train(diabetes ~ .,
+                  data = train_data,
+                  method = "svmLinear",
+                  trControl = trainControl,
+                  tuneGrid = tuningGrid,
+                  metric = "ROC",
+                  preProcess = c("center", "scale")) # Pre-processing steps
+
+# Print Model
+print(svmModel)
+```
+AUC for the SVM model is 0.6378.
+
+### Logistic regression
+```{r}
+set.seed(123)
+
+# Set up cross-validation with down-sampling for imbalance handling
+train.control <- trainControl(method = "cv", number = 10, summaryFunction = twoClassSummary, classProbs = TRUE, savePredictions = TRUE, sampling = "down")
+
+# Train the logistic regression model
+logistic.diabetes <- train(
+  diabetes ~ .,
+  data = train_data,
+  method = "glm",
+  family = "binomial",
+  trControl = train.control,
+  metric = "ROC"
+)
+
+# Display the model
+print(logistic.diabetes)
+
+
+# model coefficients as an indication of importance
+coef(logistic.diabetes$finalModel)
+```
+AUC for the logistic regression model is 0.8117.
+
+## Optimal Model Selection
+
+The optimal model that I have chosen is the *logistic regression* due to its higher AUC value, indicating it has the best overall ability to distinguish between the classes across all thresholds. It also has slightly higher sensitivity, meaning it's marginally better at identifying true positives and slightly higher specificity, indicating a marginally better performance at identifying true negatives.
+
+```{r}
+# Prediction and Evaluation on the Testing Set
+
+# Create predictions on the test set
+pred.diabetes <- predict(logistic.diabetes, newdata = test_data)
+
+# Evaluation results on the test set
+eval.results <- confusionMatrix(pred.diabetes, test_data$diabetes, positive = "Yes")
+print(eval.results)
+
+# Predictions as probabilities on the test set
+pred.diabetes.prob <- predict(logistic.diabetes, newdata = test_data, type = "prob")
+
+# ROC analysis
+roc.analysis.2 <- roc(response = as.numeric(test_data$diabetes), predictor = pred.diabetes.prob[,2])
+plot(roc.analysis.2, print.auc = TRUE, main = "ROC Curve for Diabetes Prediction")
+```
+
+**Model Performance Overview**
+* The model demonstrates fair ability to identify positive cases but struggles with a high false positive rate, as indicated by the low PPV.
+* The high NPV and sensitivity suggest the model is quite conservative, effectively identifying negative cases but at the cost of missing or incorrectly predicting a significant portion of positive cases.
+
+
+## Ethical Considerations of Using Race in Predictive Modeling
