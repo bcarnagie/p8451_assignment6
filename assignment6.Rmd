@@ -156,3 +156,11 @@ plot(roc.analysis.2, print.auc = TRUE, main = "ROC Curve for Diabetes Prediction
 Including race in disease prediction models is a complex issue with important ethical considerations. On one side, using race can help address health inequalities by recognizing that different racial groups often face different health challenges due to factors like socioeconomic status and access to healthcare. This means that including race could make predictions more accurate for everyone, potentially leading to better health care for underserved groups.
 
 However, there are significant concerns about the negative effects of including race. It can reinforce harmful stereotypes and suggest that there are biological differences between races, which is not accurate. This could lead to unfair treatment in healthcare, where people of different races receive different levels of care even if they have the same health conditions. There's also a worry that using race in this way could make health disparities worse, not better. While including race in prediction models might aim to make healthcare more fair and accurate, it's crucial to ensure that it doesn't accidentally cause more harm than good. The challenge is to use this information wisely to improve health outcomes for everyone without reinforcing biases or inequalities.
+
+ git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 2 insertions(+)
