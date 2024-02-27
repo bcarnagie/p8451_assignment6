@@ -1,16 +1,16 @@
 ---
 title: "Assignment 6: Comparison between Classification Trees, SVM and Logistic Regression"
 date: "2024-02-26"
-output: word_document:
+output: 
+  word_document:
     toc: true
     number_sections: false
-    toc_float: true
-    theme: journal
 ---
+
 
 This analysis follows the methodology presented by Yu et al., which utilizes NHANES data from 1999-2004 to predict diabetes and pre-diabetes using Support Vector Machines (SVM). Our goal is to predict Diabetes using a similar set of variables but acknowledging that the available data and outcomes may differ, leading to unique insights.
 
-### Question 1 & 2: Data Loading and Preprocessing
+## Question 1 & 2: Data Loading and Preprocessing
 
 ```{r load_packages, message=FALSE}
 library(tidyverse)
